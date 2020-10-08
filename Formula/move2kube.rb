@@ -1,4 +1,4 @@
-class Move2Kube < Formula
+class Move2kube < Formula
   desc "A command-line tool that accelerates the process of re-platforming to Kubernetes/Openshift."
   homepage "https://github.com/konveyor/move2kube"
   url "https://github.com/konveyor/move2kube.git",
