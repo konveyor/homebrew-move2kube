@@ -7,18 +7,18 @@ class Move2kube < Formula
   license "Apache-2.0"
   head "https://github.com/konveyor/move2kube.git"
 
-#  bottle do
-#    cellar :any_skip_relocation
+  bottle do
+    cellar :any_skip_relocation
 #    sha256 "" => :catalina
 #    sha256 "" => :mojave
 #    sha256 "" => :high_sierra
-#  end
+  end
 
   depends_on "go@1.15" => :build
 
   def install
     system "make", "build"
-    bin.install buildpath/"bin/move2kube"
+    bin.install "bin/move2kube"
 
     #mkdir "man1" do
     #  system bin/"move2kube", "docs", "--type", "man"
