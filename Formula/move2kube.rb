@@ -14,11 +14,11 @@ class Move2kube < Formula
 #    sha256 "" => :high_sierra
 #  end
 
-  depends_on "go" => :build
+  depends_on "go@1.15" => :build
 
   def install
     system "make", "build"
-    bin.install "bin/move2kube"
+    bin.install buildpath/"bin/move2kube"
 
     #mkdir "man1" do
     #  system bin/"move2kube", "docs", "--type", "man"
@@ -30,5 +30,9 @@ class Move2kube < Formula
 
     #output = Utils.safe_popen_read({ "SHELL" => "zsh" }, bin/"move2kube", "completion", "zsh")
     #(zsh_completion/"_move2kube").write output
+  end
+
+  test do
+    system "#{bin}/move2kube"
   end
 end
