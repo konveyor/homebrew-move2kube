@@ -24,7 +24,6 @@ install:
   - rm -rf $(brew --repo $TRAVIS_REPO_SLUG)     
   - ln -s $PWD $(brew --repo $TRAVIS_REPO_SLUG) 
   - git fetch --unshallow || true               
-  - HOMEBREW_DEVELOPER=1 brew doctor
 
 script:
   - brew install *.rb && brew test *.rb && brew linkage --test *.rb || exit 123
