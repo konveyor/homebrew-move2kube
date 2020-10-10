@@ -36,7 +36,7 @@ jobs:
       env: OS=catalina-10.15.7
       before_install: 
         - mkdir ~/usr_local && sudo mv /usr/local/* ~/usr_local
-        - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
         - |
           if [ -d ~/usr_local/Caskroom/xquartz ];
           then sudo mv ~/usr_local/Caskroom /usr/local/Caskroom;
