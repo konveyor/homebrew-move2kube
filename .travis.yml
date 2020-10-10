@@ -35,9 +35,7 @@ jobs:
       os: osx
       osx_image: xcode12.2
       env: OS=catalina-10.15.7
-      rvm: system
       before_install: 
-        - brew cask outdated xquartz || brew cask uninstall xquartz
         - mkdir ~/usr_local && sudo mv /usr/local/* ~/usr_local
         - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
         - |
