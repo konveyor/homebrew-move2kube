@@ -1,7 +1,6 @@
 # Based on https://gist.github.com/bigbes/c5c428db20e36ef5a18feafd050e560c#file-travis-yml
 
 language: ruby
-if: tag IS blank AND NOT type IN (push)
 env:
   global:
     - HOMEBREW_LOGS=/tmp # Prevent ~/.cache/Homebrew/Logs from being rebuilt
@@ -28,19 +27,14 @@ install:
   - HOMEBREW_DEVELOPER=1 brew doctor
 
 script:
-  - |
-    if [[ $TRAVIS_EVENT_TYPE =~ cron|api ]]; then
-      brew install *.rb && brew test *.rb && brew linkage --test *.rb || exit 123
-    fi
-  - if [[ $TRAVIS_EVENT_TYPE =~ pull_request ]]; then brew test-bot --root-url=$TAP_BOTTLE_ROOT_URL; fi
-  - ls *.bottle*.* || echo "==> No bottle created here"
+  - brew install *.rb && brew test *.rb && brew linkage --test *.rb || exit 123
 
 jobs:
   include:
     - &run-osx
       os: osx
       osx_image: xcode12.2
-      env: OS=catalina-10.5.7
+      env: OS=catalina-10.15.7
       rvm: system
       before_install: 
         - brew cask outdated xquartz || brew cask uninstall xquartz
