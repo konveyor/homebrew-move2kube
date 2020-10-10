@@ -1,0 +1,78 @@
+# Based on https://gist.github.com/bigbes/c5c428db20e36ef5a18feafd050e560c#file-travis-yml
+
+language: ruby
+if: tag IS blank AND NOT type IN (push)
+env:
+  global:
+    - HOMEBREW_LOGS=/tmp # Prevent ~/.cache/Homebrew/Logs from being rebuilt
+    - HOMEBREW_NO_AUTO_UPDATE=yes # Prevents redundant auto-updates from brew
+
+    - TAP_BOTTLE_ORG=konveyor                
+    - TAP_BOTTLE_ROOT_URL=https://dl.bintray.com/$TAP_BOTTLE_ORG/bottles-move2kube
+    # HOMEBREW_BINTRAY_USER
+    # HOMEBREW_BINTRAY_KEY
+
+cache:
+  directories:
+    - "$HOME/.cache/pip"
+    - "$HOME/.gem/ruby"
+    - "$HOME/Library/Caches/Homebrew"
+    - "$HOME/.cache/Homebrew"
+
+install:
+  - brew tap maelvalais/test-bot
+  - mkdir -p $(brew --repo $TRAVIS_REPO_SLUG)   
+  - rm -rf $(brew --repo $TRAVIS_REPO_SLUG)     
+  - ln -s $PWD $(brew --repo $TRAVIS_REPO_SLUG) 
+  - git fetch --unshallow || true               
+  - HOMEBREW_DEVELOPER=1 brew doctor
+
+script:
+  - |
+    if [[ $TRAVIS_EVENT_TYPE =~ cron|api ]]; then
+      brew install *.rb && brew test *.rb && brew linkage --test *.rb || exit 123
+    fi
+  - if [[ $TRAVIS_EVENT_TYPE =~ pull_request ]]; then brew test-bot --root-url=$TAP_BOTTLE_ROOT_URL; fi
+  - ls *.bottle*.* || echo "==> No bottle created here"
+
+jobs:
+  include:
+    - &run-osx
+      os: osx
+      osx_image: xcode12.2
+      env: OS=catalina-10.5.7
+      rvm: system
+      before_install: 
+        - brew cask outdated xquartz || brew cask uninstall xquartz
+        - mkdir ~/usr_local && sudo mv /usr/local/* ~/usr_local
+        - /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        - |
+          if [ -d ~/usr_local/Caskroom/xquartz ];
+          then sudo mv ~/usr_local/Caskroom /usr/local/Caskroom;
+          else travis_retry brew cask install xquartz; fi
+        - travis_retry brew install libyaml gmp openssl@1.1 openssl
+        - |
+          if ls *.{json,tar.gz}; then                                  
+            brew test-bot --root-url=$TAP_BOTTLE_ROOT_URL --bintray-org=$TAP_BOTTLE_ORG --verbose;
+          else
+            echo "==> No bottle found in the bucket, skipping --ci-upload";
+          fi
+
+    - <<: *run-osx
+      os: osx
+      osx_image: xcode11.3
+      env: OS=mojave-10.14.6
+
+    - <<: *run-osx
+      os: osx
+      osx_image: xcode10.1
+      env: OS=high_sierra-10.13
+
+before_cache:
+  # Scrub cache so that travis only caches stuff for installed formulae.
+  - brew cleanup -s
+  - brew cask cleanup
+  # Remove temporary stuff 
+  - rm -f ~/Library/Caches/Homebrew/linkage.db ~/.cache/Homebrew/linkage.db
+  - brew list
+  - du -h ~/Library/Caches/Homebrew || du -h ~/.cache/Homebrew/linkage.db
