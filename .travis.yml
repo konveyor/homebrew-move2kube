@@ -26,7 +26,7 @@ install:
   - git fetch --unshallow || true               
 
 script:
-  - brew install *.rb && brew test *.rb && brew linkage --test *.rb || exit 123
+  - brew install Formula/*.rb && brew test Formula/*.rb && brew linkage --test Formula/*.rb || exit 123
 
 jobs:
   include:
