@@ -1,13 +1,8 @@
-# Based on https://gist.github.com/bigbes/c5c428db20e36ef5a18feafd050e560c#file-travis-yml
-
 language: ruby
 env:
   global:
-    - HOMEBREW_LOGS=/tmp # Prevent ~/.cache/Homebrew/Logs from being rebuilt
-    - HOMEBREW_NO_AUTO_UPDATE=yes # Prevents redundant auto-updates from brew
-
-    - TAP_BOTTLE_ORG=konveyor                
-    - TAP_BOTTLE_ROOT_URL=https://dl.bintray.com/$TAP_BOTTLE_ORG/bottles-move2kube
+    - ORG=konveyor
+    - REPO=move2kube                
     # HOMEBREW_BINTRAY_USER
     # HOMEBREW_BINTRAY_KEY
 
@@ -16,17 +11,14 @@ cache:
     - "$HOME/.cache/pip"
     - "$HOME/.gem/ruby"
     - "$HOME/Library/Caches/Homebrew"
-    - "$HOME/.cache/Homebrew"
-
+    - "$HOME/.cache/Homebrew"   
+    
 install:
-  - brew tap maelvalais/test-bot
-  - mkdir -p $(brew --repo $TRAVIS_REPO_SLUG)   
-  - rm -rf $(brew --repo $TRAVIS_REPO_SLUG)     
-  - ln -s $PWD $(brew --repo $TRAVIS_REPO_SLUG) 
-  - git fetch --unshallow || true               
+  - git config --global --unset protocol.version
+  - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
 script:
-  - brew test-bot --root-url=$TAP_BOTTLE_ROOT_URL --bintray-org=$TAP_BOTTLE_ORG --tap=konveyor/move2kube konveyor/move2kube/move2kube --verbose
+  - brew test-bot --root-url=https://dl.bintray.com/$ORG/bottles-$REPO --bintray-org=$ORG --tap=$ORG/$REPO $ORG/$REPO/$REPO --verbose
 
 jobs:
   include:
@@ -34,15 +26,6 @@ jobs:
       os: osx
       osx_image: xcode12.2
       env: OS=catalina-10.15.7
-      before_install: 
-        - mkdir ~/usr_local && sudo mv /usr/local/* ~/usr_local
-        - git config --global --unset protocol.version
-        - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-        - |
-          if [ -d ~/usr_local/Caskroom/xquartz ];
-          then sudo mv ~/usr_local/Caskroom /usr/local/Caskroom;
-          else travis_retry brew cask install xquartz; fi
-        - travis_retry brew install libyaml gmp openssl@1.1 openssl
 
     - <<: *run-osx
       os: osx
@@ -55,10 +38,8 @@ jobs:
       env: OS=high_sierra-10.13
 
 before_cache:
-  # Scrub cache so that travis only caches stuff for installed formulae.
   - brew cleanup -s
   - brew cask cleanup
-  # Remove temporary stuff 
   - rm -f ~/Library/Caches/Homebrew/linkage.db ~/.cache/Homebrew/linkage.db
   - brew list
   - du -h ~/Library/Caches/Homebrew || du -h ~/.cache/Homebrew/linkage.db
