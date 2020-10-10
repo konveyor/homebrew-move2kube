@@ -14,7 +14,7 @@ class Move2kube < Formula
 #    sha256 "" => :high_sierra
   end
 
-  depends_on "go@1.15" => :build
+  depends_on "go" => :build
 
   def install
     system "make", "build"
