@@ -16,6 +16,7 @@ cache:
 install:
   - git config --global --unset protocol.version
   - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  - brew tap davidchall/test-bot
 
 script:
   - brew test-bot --root-url=https://dl.bintray.com/$ORG/bottles-$REPO --bintray-org=$ORG --tap=$ORG/$REPO $ORG/$REPO/$REPO --verbose
