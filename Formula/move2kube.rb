@@ -1,6 +1,6 @@
 class Move2kube < Formula
   desc "Command-line tool that accelerates the process of re-platforming to Kubernetes/Openshift"
-  homepage "https://konveyor.github.io/"
+  homepage "https://konveyor.io/move2kube"
   url "https://github.com/konveyor/move2kube.git",
       tag:      "v0.1.0-alpha",
       revision: "d4590d5693a570adc5d9faaaaf9bbc977a013e1f"
