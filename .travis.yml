@@ -19,7 +19,7 @@ install:
   - brew tap davidchall/test-bot
 
 script:
-  - brew test-bot --root-url=https://dl.bintray.com/$ORG/bottles-$REPO --verbose
+  - brew test-bot --root-url=https://dl.bintray.com/$ORG/bottles-$REPO --bintray-org=$ORG --tap=$ORG/$REPO $ORG/$REPO/$REPO --verbose
 
 jobs:
   include:
