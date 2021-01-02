@@ -6,8 +6,8 @@ class Move2kube < Formula
   license "Apache-2.0"
 
   depends_on "go@1.15" => :build
-  depends_on "docker" => :optional
   depends_on "buildpacks/tap/pack" => :optional
+  depends_on "docker" => :optional
   depends_on "helm" => :optional
   depends_on "kubernetes-cli" => :optional
   depends_on "operator-sdk" => :optional
