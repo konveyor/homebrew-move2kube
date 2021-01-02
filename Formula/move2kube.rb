@@ -18,12 +18,7 @@ class Move2kube < Formula
   end
 
   test do
-    want = 'version: v0.1.0
-gitCommit: 0e9d69d02c16379c6492e2404080fa295cc08a5f
-gitTreeState: clean
-goVersion: go1.15.2
-
-'
-    assert_match want, shell_output("#{bin}/move2kube version -l")
+    want = 'v0.1.0'
+    assert_match want, shell_output("#{bin}/move2kube version")
   end
 end
