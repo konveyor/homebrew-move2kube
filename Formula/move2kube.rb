@@ -18,6 +18,7 @@ class Move2kube < Formula
   end
 
   test do
+    # test the version
     want = "v0.1.0"
     assert_match want, shell_output("#{bin}/move2kube version")
   end
