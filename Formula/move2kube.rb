@@ -1,9 +1,15 @@
 class Move2kube < Formula
   desc "Command-line tool that accelerates migration of your app to Kubernetes/Openshift"
   homepage "https://konveyor.io/move2kube"
-  url "https://github.com/konveyor/move2kube/archive/v0.1.0.tar.gz"
-  sha256 "b323c6045f4a970198021a8a31ac9ad9b17920d0f7a38c7bf23dbf6ee1c29c76"
   license "Apache-2.0"
+  head "https://github.com/konveyor/move2kube.git"
+
+  stable do
+    url "https://github.com/konveyor/move2kube.git",
+      using:    :git,
+      tag:      "v0.1.0",
+      revision: "0e9d69d02c16379c6492e2404080fa295cc08a5f"
+  end
 
   bottle do
     root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/move2kube-0.1.0"
