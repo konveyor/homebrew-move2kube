@@ -14,6 +14,7 @@ class Move2kube < Formula
   bottle do
     root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/move2kube-0.1.0"
     cellar :any_skip_relocation
+    sha256 "b5076d440d60e6fbf78a0e46700bb25fac3c8a72c8b8b705f17a8c27d76aaecb" => :big_sur
     sha256 "9f3d4caacba9e2e55d06ee02a13f3efc73748090759e98f612bc2ae4484349a6" => :catalina
     sha256 "f2758815ccbcf7d1465c06b8169cab2c62c15d7b862032fc9df1cda81a47f590" => :x86_64_linux
   end
