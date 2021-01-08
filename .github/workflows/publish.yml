@@ -1,33 +1,144 @@
-name: brew pr-pull
+name: Publish
+
 on:
-  pull_request_target:
-    types:
-      - labeled
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag: The tag to use for this release"
+        required: true
+        default: v0.1.0
+      tag_sha:
+        description: "tag_sha: SHA of the tag commit"
+        required: true
+        default: 0e9d69d02c16379c6492e2404080fa295cc08a5f
+
 jobs:
-  pr-pull:
-    if: contains(github.event.pull_request.labels.*.name, 'pr-pull')
+  update_formula_and_create_macos_bottle:
+    runs-on: macos-latest
+    steps:
+      - uses: Homebrew/actions/setup-homebrew@master
+      - uses: actions/checkout@v2
+        with:
+          ref: main
+      - name: update the tag in the formula
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const formula_file = 'Formula/move2kube.rb';
+            const formula_file_data = fs.readFileSync(formula_file).toString('utf-8');
+            const lines = formula_file_data.split('\n');
+
+            const i1 = lines.findIndex(line => line.trim().startsWith('stable')); // Find the stable block
+            const i2 = i1 + lines.slice(i1).findIndex(line => line.trim().startsWith('tag')); // Find the tag in the stable block
+            lines[i2]   = '      tag:      "${{ github.event.inputs.tag }}",';
+            lines[i2+1] = '      revision: "${{ github.event.inputs.tag_sha }}"';
+            const new_formula_file_data = lines.join('\n');
+
+            fs.writeFileSync(formula_file, new_formula_file_data);
+      - run: brew test-bot --only-cleanup-before
+      - run: brew test-bot --only-setup
+      - run: brew test-bot --only-tap-syntax
+      - run: brew install --build-bottle ./Formula/move2kube.rb
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ./Formula/move2kube.rb
+      - uses: actions/upload-artifact@main
+        with:
+          name: bottles
+          path: |
+            Formula/move2kube.rb
+            *.bottle.*
+
+  create_linux_bottle_then_tag_and_release:
+    needs: [update_formula_and_create_macos_bottle]
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-
-      - name: Set up git
-        uses: Homebrew/actions/git-user-config@master
-
-      - name: Pull bottles
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
-          PULL_REQUEST: ${{ github.event.pull_request.number }}
-        run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
-
-      - name: Push commits
-        uses: Homebrew/actions/git-try-push@master
+      - uses: Homebrew/actions/setup-homebrew@master
+      - uses: actions/checkout@v2
         with:
-          token: ${{ github.token }}
+          ref: main
+      - run: brew test-bot --only-cleanup-before
+      - run: brew test-bot --only-setup
+      - run: brew test-bot --only-tap-syntax
+      - uses: actions/download-artifact@v2
+        with:
+          name: bottles
+      - run: brew install --build-bottle ./Formula/move2kube.rb
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ./Formula/move2kube.rb
+      - name: update the bottle block in the formula
+        run: brew bottle --merge --write --no-commit *.json
+      - uses: EndBug/add-and-commit@v6
+        with:
+          add: Formula/move2kube.rb
+          author_name: move2kube
+          author_email: move2kube@gmail.com
           branch: main
+          cwd: "."
+          message: "chore: update formula for new release. run_id ${{ github.run_id }}"
+          pull_strategy: "--ff-only"
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - id: get_sha
+        run: echo "::set-output name=sha::$(git rev-parse HEAD)"
+      - uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ github.event.inputs.tag }}';
+            const sha = '${{ steps.get_sha.outputs.sha }}';
+            const release_title = `Move2Kube ${tag}`;
+            const release_body = 'This release contains the prebuilt bottles for homebrew';
 
-      - name: Delete branch
-        if: github.event.pull_request.head.repo.fork == false
-        env:
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: git push --delete origin $BRANCH
+            let tag_exists = false;
+            try {
+              const resp = await github.git.getRef({...context.repo, ref: `tags/${tag}`});
+              tag_exists = true;
+              core.info(`the tag ${tag} already exists on ${resp.data.object.type} ${resp.data.object.sha}`);
+            } catch(err) {
+              if(err.status !== 404){
+                throw err;
+              }
+            }
+            if(tag_exists) {
+              core.info(`deleting the tag ${tag}`);
+              const resp = await github.git.deleteRef({...context.repo, ref: `tags/${tag}`});
+            }
+
+            core.info(`creating the tag ${tag} on the commit ${sha}`);
+            github.git.createRef({
+              ...context.repo,
+              ref: `refs/tags/${tag}`,
+              sha
+            });
+
+            // wait a few seconds to let the tag get created
+            function sleep(ms) {
+              return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            await sleep(2000);
+
+            await github.repos.createRelease({
+              ...context.repo,
+              tag_name: tag,
+              name: release_title,
+              body: release_body,
+              draft: false,
+              prerelease: false,
+            });
+      - name: remove double hyphen from filenames
+        run: |
+          mkdir temp/
+          mv -- *.bottle.tar.gz temp/
+          for file_path in temp/*; do
+            file_name=$(basename "$file_path")
+            new_file_name="${file_name//--/-}"
+            mv "$file_path" "$new_file_name"
+          done
+          rmdir temp/
+      - name: upload release assets
+        uses: HarikrishnanBalagopal/upload-release-action@v3
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.event.inputs.tag }}
+          file: "*.bottle.tar.gz"
+          file_glob: true
+          overwrite: true
