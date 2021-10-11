@@ -46,7 +46,7 @@ jobs:
             const i3 = i2 + lines.slice(i2).findIndex(line => line.trim().startsWith('depends_on "go@')); // Find the Golang version line
             lines[i2]   = '      tag:      "${{ github.event.inputs.tag }}",';
             lines[i2+1] = '      revision: "${{ github.event.inputs.tag_sha }}"';
-            lines[i3]   = '  depends_on "go@{{ .steps.info.outputs.go_version }}" => :build';
+            lines[i3]   = '  depends_on "go@${{ .steps.info.outputs.go_version }}" => :build';
             const new_formula_file_data = lines.join('\n');
 
             fs.writeFileSync(formula_file, new_formula_file_data);
