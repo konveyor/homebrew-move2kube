@@ -7,18 +7,17 @@ class Move2kube < Formula
   stable do
     url "https://github.com/konveyor/move2kube.git",
       using:    :git,
-      tag:      "v0.1.0",
-      revision: "0e9d69d02c16379c6492e2404080fa295cc08a5f"
+      tag:      "v0.2.0",
+      revision: "8a4e2b89f0908e08fa817467bf4cecfcb9649cc9"
   end
 
   bottle do
-    root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/move2kube-0.1.0"
-    sha256 cellar: :any_skip_relocation, big_sur:      "b5076d440d60e6fbf78a0e46700bb25fac3c8a72c8b8b705f17a8c27d76aaecb"
-    sha256 cellar: :any_skip_relocation, catalina:     "9f3d4caacba9e2e55d06ee02a13f3efc73748090759e98f612bc2ae4484349a6"
-    sha256 cellar: :any_skip_relocation, x86_64_linux: "f2758815ccbcf7d1465c06b8169cab2c62c15d7b862032fc9df1cda81a47f590"
+    root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/v0.2.0"
+    sha256 cellar: :any_skip_relocation, big_sur:      "981479c94aaa11eaa74e88ef9edc8f1cc9bd42c683cf23bf0dcbe72e4229cf64"
+    sha256 cellar: :any_skip_relocation, x86_64_linux: "aaca8161fd8d3c251a969028e4dcbc66f203ea99b0fceb913167ae70f0301851"
   end
 
-  depends_on "go@1.15" => :build
+  depends_on "go@1.16" => :build
   depends_on "buildpacks/tap/pack" => :optional
   depends_on "docker" => :optional
   depends_on "helm" => :optional
