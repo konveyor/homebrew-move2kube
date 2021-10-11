@@ -7,10 +7,6 @@ on:
         description: "tag: The tag to use for this release"
         required: true
         default: v0.1.0
-      tag_sha:
-        description: "tag_sha: SHA of the tag commit"
-        required: true
-        default: 0e9d69d02c16379c6492e2404080fa295cc08a5f
 
 defaults:
   run:
@@ -25,6 +21,8 @@ jobs:
         with:
           repository: konveyor/move2kube
           ref: ${{ github.event.inputs.tag }}
+      - id: get_sha
+        run: echo "::set-output name=sha::$(git rev-parse HEAD)"
       - id: info
         uses: konveyor/get-env-info@v1
       - run: rm -rf {*,.*} || true
@@ -45,8 +43,8 @@ jobs:
             const i2 = i1 + lines.slice(i1).findIndex(line => line.trim().startsWith('tag')); // Find the tag in the stable block
             const i3 = i2 + lines.slice(i2).findIndex(line => line.trim().startsWith('depends_on "go@')); // Find the Golang version line
             lines[i2]   = '      tag:      "${{ github.event.inputs.tag }}",';
-            lines[i2+1] = '      revision: "${{ github.event.inputs.tag_sha }}"';
-            lines[i3]   = '  depends_on "go@${{ .steps.info.outputs.go_version }}" => :build';
+            lines[i2+1] = '      revision: "${{ steps.get_sha.outputs.sha }}"';
+            lines[i3]   = '  depends_on "go@${{ steps.info.outputs.go_version }}" => :build';
             const new_formula_file_data = lines.join('\n');
 
             fs.writeFileSync(formula_file, new_formula_file_data);
