@@ -17,6 +17,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: Homebrew/actions/setup-homebrew@master
+      - run: rm -rf {*,.*} || true
       - uses: actions/checkout@v2
         with:
           repository: konveyor/move2kube
@@ -29,35 +30,44 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: main
-      - name: update the tag in the formula
+      - run: brew test-bot --only-cleanup-before
+      - id: new_formula
+        name: create a new formula file for the tag
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            function normalizeForRubyClassName(x) {
+              return x.replace(/-\w/g, (c) => c.slice(1).toUpperCase()).replace(/\./g,'')
+            }
             const fs = require('fs');
-            const formula_file = 'Formula/move2kube.rb';
+            const formula_file = './Formula/move2kube.rb';
+            const tag = '${{ github.event.inputs.tag }}'.slice(1);
+            const new_formula_file = './Formula/move2kube@' + tag + '.rb';
             const formula_file_data = fs.readFileSync(formula_file).toString('utf-8');
             const lines = formula_file_data.split('\n');
 
             const i1 = lines.findIndex(line => line.trim().startsWith('stable')); // Find the stable block
             const i2 = i1 + lines.slice(i1).findIndex(line => line.trim().startsWith('tag')); // Find the tag in the stable block
             const i3 = i2 + lines.slice(i2).findIndex(line => line.trim().startsWith('depends_on "go@')); // Find the Golang version line
+            lines[0] = `class Move2kubeAT${normalizeForRubyClassName(tag)} < Formula`;
             lines[i2]   = '      tag:      "${{ github.event.inputs.tag }}",';
             lines[i2+1] = '      revision: "${{ steps.get_sha.outputs.sha }}"';
             lines[i3]   = '  depends_on "go@${{ steps.info.outputs.go_version }}" => :build';
             const new_formula_file_data = lines.join('\n');
 
-            fs.writeFileSync(formula_file, new_formula_file_data);
-      - run: brew test-bot --only-cleanup-before
+            fs.writeFileSync(new_formula_file, new_formula_file_data);
+            return new_formula_file;
       - run: brew test-bot --only-setup
-      - run: brew test-bot --only-tap-syntax
-      - run: brew install --build-bottle ./Formula/move2kube.rb
-      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ./Formula/move2kube.rb
+      - run: ls -R
+      - run: cat ${{ steps.new_formula.outputs.result }}
+      - run: brew install --build-bottle ${{ steps.new_formula.outputs.result }}
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
       - uses: actions/upload-artifact@main
         with:
           name: bottles
           path: |
-            Formula/move2kube.rb
+            ${{fromJSON(steps.new_formula.outputs.result)}}
             *.bottle.*
 
   create_linux_bottle_then_tag_and_release:
@@ -65,22 +75,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: Homebrew/actions/setup-homebrew@master
+      - run: rm -rf {*,.*} || true
       - uses: actions/checkout@v2
         with:
           ref: main
       - run: brew test-bot --only-cleanup-before
+      - id: new_formula
+        name: get new formula filename
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ github.event.inputs.tag }}'.slice(1);
+            const new_formula_file = './Formula/move2kube@' + tag + '.rb';
+            return new_formula_file;
       - run: brew test-bot --only-setup
-      - run: brew test-bot --only-tap-syntax
       - uses: actions/download-artifact@v2
         with:
           name: bottles
-      - run: brew install --build-bottle ./Formula/move2kube.rb
-      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ./Formula/move2kube.rb
+      - run: ls -R
+      - run: cat ${{ steps.new_formula.outputs.result }}
+      - run: brew install --build-bottle ${{ steps.new_formula.outputs.result }}
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
       - name: update the bottle block in the formula
         run: brew bottle --merge --write --no-commit *.json
       - uses: EndBug/add-and-commit@v6
         with:
-          add: Formula/move2kube.rb
+          add: ${{fromJSON(steps.new_formula.outputs.result)}}
           author_name: move2kube
           author_email: move2kube@gmail.com
           branch: main
