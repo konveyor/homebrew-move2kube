@@ -1,6 +1,6 @@
 class Move2kubeAT030Rc1 < Formula
   desc "Command-line tool that accelerates migration of your app to Kubernetes/Openshift"
-  homepage "https://konveyor.io/move2kube"
+  homepage "https://move2kube.konveyor.io/"
   license "Apache-2.0"
   head "https://github.com/konveyor/move2kube.git"
 
