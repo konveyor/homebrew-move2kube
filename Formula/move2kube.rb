@@ -7,14 +7,14 @@ class Move2kube < Formula
   stable do
     url "https://github.com/konveyor/move2kube.git",
       using:    :git,
-      tag:      "v0.3.0",
-      revision: "842d8ff3953ca517f085cbc6f26b8f25db94115f"
+      tag:      "v0.3.1",
+      revision: "5c0d928dbe7717a233fabb96cd7cb968ad670e72"
   end
 
   bottle do
-    root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/v0.3.0"
-    sha256 cellar: :any_skip_relocation, big_sur:      "b3055f680d69ef90c636ab7fd7d66f73fd37596ffed60c0a0a2a500a966d4d0e"
-    sha256 cellar: :any_skip_relocation, x86_64_linux: "a054aa2621786937111be5ce2afc30cb976b4f2b5d7bd9d30a45fe7d35cf0d64"
+    root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/v0.3.1"
+    sha256 cellar: :any_skip_relocation, big_sur:      "ee700128f138b774ae5e96a951ffb899b42b4c2a93fc9ba7ece0703b8221e374"
+    sha256 cellar: :any_skip_relocation, x86_64_linux: "380ed92bc08b984ce91ca415ac731adaf7338e429082d8dbb4c4dbe20b73dd9d"
   end
 
   depends_on "go@1.17" => :build
