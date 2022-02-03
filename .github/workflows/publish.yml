@@ -171,7 +171,7 @@ jobs:
 
       - uses: EndBug/add-and-commit@v6
         with:
-          add: [ ${{ steps.new_formula.outputs.result }}, "./Formula/move2kube.rb"]
+          add: [ "${{ fromJSON(steps.new_formula.outputs.result) }}", "./Formula/move2kube.rb"]
           author_name: move2kube
           author_email: move2kube@gmail.com
           branch: main
