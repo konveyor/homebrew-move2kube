@@ -99,9 +99,79 @@ jobs:
       - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
       - name: update the bottle block in the formula
         run: brew bottle --merge --write --no-commit *.json
+
+      - name: remove double hyphen from filenames
+        run: |
+          mkdir temp/
+          mv -- *.bottle.tar.gz temp/
+          for file_path in temp/*; do
+            file_name=$(basename "$file_path")
+            new_file_name="${file_name//--/-}"
+            mv "$file_path" "$new_file_name"
+          done
+          rmdir temp/
+
+      - name: get info
+        run: curl -Lo releaseinfo.json 'https://move2kube.konveyor.io/releaseinfo.json'
+      - id: check
+        name: update the stable formula
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ github.event.inputs.tag }}';
+            const fs = require('fs');
+            const rel_info = JSON.parse(fs.readFileSync('releaseinfo.json'));
+            console.log('release info', rel_info);
+            if(rel_info.current.release !== tag) return console.log('not updating stable formula');
+            console.log('updating the stable formula');
+            core.setOutput('proceed', true);
+            core.setOutput('version', tag.slice(1));
+      - run: rm releaseinfo.json && echo '${{ steps.check.outputs.proceed }}' '${{ steps.check.outputs.version }}'
+      - if: ${{ steps.check.outputs.proceed }}
+        id: update-archives
+        run: |
+          for file in *.bottle.tar.gz
+          do
+            tar -xzf "$file"
+            mv 'move2kube@${{ steps.check.outputs.version }}' move2kube
+            new_name="${file//@*-/-}"
+            tar -czf "$new_name" move2kube/
+            hash="$(sha256sum "$new_name" | awk '{print $1}')"
+            echo "new_name ${new_name} hash ${hash}"
+            echo '::set-output name='"${new_name}::${hash}"
+            rm -rf move2kube/
+          done
+          ls ./*.tar.gz
+      - if: ${{ steps.check.outputs.proceed }}
+        name: update formula
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const names_to_hashes = Object.entries(${{ toJSON(steps.update-archives.outputs) }});
+            console.log('names_to_hashes', names_to_hashes);
+            const filename = '${{ steps.new_formula.outputs.result }}';
+            const platform_regex = /:any_skip_relocation, ([^\s]+):\s*"[0-9a-f]+"$/;
+            const fs = require('fs');
+            const find_hash = x => {
+              const platform = platform_regex.exec(x)[1];
+              const name_and_hash = names_to_hashes.find(([k, v]) => k.includes(platform));
+              if(name_and_hash) return name_and_hash[1];
+              core.setFailed(`failed to find the hash of the .tar.gz file for the platform ${platform}`);
+              return 'deadbeef';
+            };
+            const change_hash = x => x.replace(/"[0-9a-f]+"$/, `"${find_hash(x)}"`);
+            const condition = x => /^\s+sha256 cellar.*"[0-9a-f]+"$/.test(x);
+            const lines = fs.readFileSync(filename).toString().split('\n').map(line => condition(line) ? change_hash(line) : line);
+            lines[0] = 'class Move2kube < Formula';
+            fs.writeFileSync('./Formula/move2kube.rb', lines.join('\n'));
+      - if: ${{ steps.check.outputs.proceed }}
+        run: ls && cat move2kube.rb
+
       - uses: EndBug/add-and-commit@v6
         with:
-          add: ${{fromJSON(steps.new_formula.outputs.result)}}
+          add: [ ${{ steps.new_formula.outputs.result }}, "./Formula/move2kube.rb"]
           author_name: move2kube
           author_email: move2kube@gmail.com
           branch: main
@@ -156,17 +226,8 @@ jobs:
               draft: false,
               prerelease: false,
             });
-      - name: remove double hyphen from filenames
-        run: |
-          mkdir temp/
-          mv -- *.bottle.tar.gz temp/
-          for file_path in temp/*; do
-            file_name=$(basename "$file_path")
-            new_file_name="${file_name//--/-}"
-            mv "$file_path" "$new_file_name"
-          done
-          rmdir temp/
-      - name: upload release assets
+
+        name: upload release assets
         uses: HarikrishnanBalagopal/upload-release-action@v3
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
