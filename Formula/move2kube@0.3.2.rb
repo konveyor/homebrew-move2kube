@@ -1,4 +1,4 @@
-class Move2kube < Formula
+class Move2kubeAT032 < Formula
   desc "Command-line tool that accelerates migration of your app to Kubernetes/Openshift"
   homepage "https://move2kube.konveyor.io/"
   license "Apache-2.0"
@@ -13,8 +13,8 @@ class Move2kube < Formula
 
   bottle do
     root_url "https://github.com/konveyor/homebrew-move2kube/releases/download/v0.3.2"
-    sha256 cellar: :any_skip_relocation, big_sur:      "0a1261a1f8d824841adb1988a67f7e656e6e0ea4555dcee054ed3074a6ca07b9"
-    sha256 cellar: :any_skip_relocation, x86_64_linux: "180610479200c6798df9d603cdea49df795135549b81b3be23c5b1842240054f"
+    sha256 cellar: :any_skip_relocation, big_sur:      "a07d1d76e890e2fdc363f15b617a82947a7a7ceae1ce5c2a8f643848ac595927"
+    sha256 cellar: :any_skip_relocation, x86_64_linux: "4f7279be5ae6328a5fbc9ab354c2c77e786c91626d8e5ac4eddecf265d430056"
   end
 
   depends_on "go@1.17" => :build
