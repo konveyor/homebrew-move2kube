@@ -151,7 +151,7 @@ jobs:
           script: |
             const names_to_hashes = Object.entries(${{ toJSON(steps.update-archives.outputs) }});
             console.log('names_to_hashes', names_to_hashes);
-            const filename = '${{ steps.new_formula.outputs.result }}';
+            const filename = '${{ fromJSON(steps.new_formula.outputs.result) }}';
             const platform_regex = /:any_skip_relocation, ([^\s]+):\s*"[0-9a-f]+"$/;
             const fs = require('fs');
             const find_hash = x => {
