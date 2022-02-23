@@ -167,7 +167,7 @@ jobs:
             lines[0] = 'class Move2kube < Formula';
             fs.writeFileSync('./Formula/move2kube.rb', lines.join('\n'));
       - if: ${{ steps.check.outputs.proceed }}
-        run: ls && cat move2kube.rb
+        run: ls && cat ./Formula/move2kube.rb
       - uses: EndBug/add-and-commit@v6
         with:
           add: '["${{ fromJSON(steps.new_formula.outputs.result) }}", "./Formula/move2kube.rb"]'
