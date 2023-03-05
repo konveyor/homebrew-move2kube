@@ -18,6 +18,8 @@ jobs:
     steps:
       - uses: Homebrew/actions/setup-homebrew@master
       - run: rm -rf {*,.*} || true
+      - id: add_our_tap
+        run: brew --version && brew tap konveyor/move2kube && brew tap
       - uses: actions/checkout@v2
         with:
           repository: konveyor/move2kube
