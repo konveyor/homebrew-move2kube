@@ -63,9 +63,13 @@ jobs:
       - run: brew test-bot --only-setup
       - run: ls -R
       - run: cat ${{ steps.new_formula.outputs.result }}
-      - run: brew install --formula --build-bottle ${{ steps.new_formula.outputs.result }}
+      - run: ls /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/
+      - id: move_formula_to_tap
+        run: mv ${{ steps.new_formula.outputs.result }} /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
+      - run: ls /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/
+      - run: brew install --formula --build-bottle /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
         # https://docs.brew.sh/Manpage#install-options-formulacask-
-      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
         # https://docs.brew.sh/Manpage#bottle-options-installed_formulafile-
       - uses: actions/upload-artifact@main
         with:
