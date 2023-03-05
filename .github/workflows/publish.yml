@@ -71,7 +71,7 @@ jobs:
           echo "dirpath=${MY_DIR_PATH}" >> $GITHUB_OUTPUT
           echo "outpath=${MY_DIR_PATH}${MY_NEW_FORMULA_NAME}" >> $GITHUB_OUTPUT
       - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
-      - run: cp ${{ steps.new_formula.outputs.result }} ${{ steps.get_new_formula_filename.outputs.outpath }}
+      - run: cp ${{ steps.new_formula.outputs.result }} ${{ steps.get_new_formula_filename.outputs.outpath }} || true
       - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
       - run: brew install --formula --build-bottle /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
         # https://docs.brew.sh/Manpage#install-options-formulacask-
