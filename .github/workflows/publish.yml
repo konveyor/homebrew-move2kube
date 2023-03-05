@@ -35,7 +35,7 @@ jobs:
       - run: brew test-bot --only-cleanup-before
       - id: new_formula
         name: create a new formula file for the tag
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -96,7 +96,7 @@ jobs:
       - run: brew test-bot --only-cleanup-before
       - id: new_formula
         name: get new formula filename
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -109,8 +109,20 @@ jobs:
           name: bottles
       - run: ls -R
       - run: cat ${{ steps.new_formula.outputs.result }}
-      - run: brew install --build-bottle ${{ steps.new_formula.outputs.result }}
-      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
+      - id: get_new_formula_filename
+        run: |
+          MY_NEW_FORMULA_NAME=$(basename ${{ steps.new_formula.outputs.result }})
+          echo "filename=$MY_NEW_FORMULA_NAME" >> $GITHUB_OUTPUT
+          MY_DIR_PATH="/home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/"
+          echo "dirpath=${MY_DIR_PATH}" >> $GITHUB_OUTPUT
+          echo "outpath=${MY_DIR_PATH}${MY_NEW_FORMULA_NAME}" >> $GITHUB_OUTPUT
+      - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
+      - run: cp ${{ steps.new_formula.outputs.result }} ${{ steps.get_new_formula_filename.outputs.outpath }} || true
+      - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
+      - run: brew install --formula --build-bottle ${{ steps.get_new_formula_filename.outputs.outpath }}
+        # https://docs.brew.sh/Manpage#install-options-formulacask-
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.get_new_formula_filename.outputs.outpath }}
+        # https://docs.brew.sh/Manpage#bottle-options-installed_formulafile-
       - name: update the bottle block in the formula
         run: brew bottle --merge --write --no-commit *.json
 
@@ -129,7 +141,7 @@ jobs:
         run: curl -Lo releaseinfo.json 'https://move2kube.konveyor.io/releaseinfo.json'
       - id: check
         name: update the stable formula
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -159,7 +171,7 @@ jobs:
           ls ./*.tar.gz
       - if: ${{ steps.check.outputs.proceed }}
         name: update formula
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -194,7 +206,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - id: get_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-      - uses: actions/github-script@v3
+      - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -205,7 +217,7 @@ jobs:
 
             let tag_exists = false;
             try {
-              const resp = await github.git.getRef({...context.repo, ref: `tags/${tag}`});
+              const resp = await github.rest.git.getRef({...context.repo, ref: `tags/${tag}`});
               tag_exists = true;
               core.info(`the tag ${tag} already exists on ${resp.data.object.type} ${resp.data.object.sha}`);
             } catch(err) {
@@ -215,11 +227,11 @@ jobs:
             }
             if(tag_exists) {
               core.info(`deleting the tag ${tag}`);
-              const resp = await github.git.deleteRef({...context.repo, ref: `tags/${tag}`});
+              const resp = await github.rest.git.deleteRef({...context.repo, ref: `tags/${tag}`});
             }
 
             core.info(`creating the tag ${tag} on the commit ${sha}`);
-            github.git.createRef({
+            github.rest.git.createRef({
               ...context.repo,
               ref: `refs/tags/${tag}`,
               sha
@@ -231,7 +243,7 @@ jobs:
             }
             await sleep(2000);
 
-            await github.repos.createRelease({
+            await github.rest.repos.createRelease({
               ...context.repo,
               tag_name: tag,
               name: release_title,
