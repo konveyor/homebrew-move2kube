@@ -73,9 +73,9 @@ jobs:
       - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
       - run: cp ${{ steps.new_formula.outputs.result }} ${{ steps.get_new_formula_filename.outputs.outpath }} || true
       - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
-      - run: brew install --formula --build-bottle /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
+      - run: brew install --formula --build-bottle ${{ steps.get_new_formula_filename.outputs.outpath }}
         # https://docs.brew.sh/Manpage#install-options-formulacask-
-      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
+      - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.get_new_formula_filename.outputs.outpath }}
         # https://docs.brew.sh/Manpage#bottle-options-installed_formulafile-
       - uses: actions/upload-artifact@main
         with:
