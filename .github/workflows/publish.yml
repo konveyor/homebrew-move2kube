@@ -42,7 +42,7 @@ jobs:
             }
             const fs = require('fs');
             const formula_file = './Formula/move2kube.rb';
-            const tag = '${{ github.event.inputs.tag }}'.slice(1);
+            const tag = '${{ github.event.inputs.tag }}'.slice(1); // remove the v in v0.1.0
             const new_formula_file = './Formula/move2kube@' + tag + '.rb';
             const formula_file_data = fs.readFileSync(formula_file).toString('utf-8');
             const lines = formula_file_data.split('\n');
@@ -61,8 +61,10 @@ jobs:
       - run: brew test-bot --only-setup
       - run: ls -R
       - run: cat ${{ steps.new_formula.outputs.result }}
-      - run: brew install --build-bottle ${{ steps.new_formula.outputs.result }}
+      - run: brew install --formula --build-bottle ${{ steps.new_formula.outputs.result }}
+        # https://docs.brew.sh/Manpage#install-options-formulacask-
       - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' ${{ steps.new_formula.outputs.result }}
+        # https://docs.brew.sh/Manpage#bottle-options-installed_formulafile-
       - uses: actions/upload-artifact@main
         with:
           name: bottles
