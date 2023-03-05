@@ -25,7 +25,7 @@ jobs:
           repository: konveyor/move2kube
           ref: ${{ github.event.inputs.tag }}
       - id: get_sha
-        run: echo "::set-output name=sha::$(git rev-parse HEAD)"
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - id: info
         uses: konveyor/get-env-info@v1
       - run: rm -rf {*,.*} || true
@@ -63,10 +63,16 @@ jobs:
       - run: brew test-bot --only-setup
       - run: ls -R
       - run: cat ${{ steps.new_formula.outputs.result }}
-      - run: ls /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/
-      - id: move_formula_to_tap
-        run: mv ${{ steps.new_formula.outputs.result }} /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
-      - run: ls /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/
+      - id: get_new_formula_filename
+        run: |
+          MY_NEW_FORMULA_NAME=$(basename ${{ steps.new_formula.outputs.result }})
+          echo "filename=$MY_NEW_FORMULA_NAME" >> $GITHUB_OUTPUT
+          MY_DIR_PATH="/usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/"
+          echo "dirpath=${MY_DIR_PATH}" >> $GITHUB_OUTPUT
+          echo "outpath=${MY_DIR_PATH}/${MY_NEW_FORMULA_NAME}" >> $GITHUB_OUTPUT
+      - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
+      - run: cp ${{ steps.get_new_formula_filename.outputs.filename }} ${{ steps.get_new_formula_filename.outputs.outpath }}
+      - run: ls ${{ steps.get_new_formula_filename.outputs.dirpath }}
       - run: brew install --formula --build-bottle /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
         # https://docs.brew.sh/Manpage#install-options-formulacask-
       - run: brew bottle --json --root-url='https://github.com/konveyor/homebrew-move2kube/releases/download/${{ github.event.inputs.tag }}' /usr/local/Homebrew/Library/Taps/konveyor/homebrew-move2kube/Formula/${{ steps.new_formula.outputs.result }}
@@ -147,7 +153,7 @@ jobs:
             tar -czf "$new_name" move2kube/
             hash="$(sha256sum "$new_name" | awk '{print $1}')"
             echo "new_name ${new_name} hash ${hash}"
-            echo '::set-output name='"${new_name}::${hash}"
+            echo "${new_name}=${hash}" >> $GITHUB_OUTPUT
             rm -rf move2kube/
           done
           ls ./*.tar.gz
@@ -187,7 +193,7 @@ jobs:
           pull_strategy: "--ff-only"
           token: ${{ secrets.GITHUB_TOKEN }}
       - id: get_sha
-        run: echo "::set-output name=sha::$(git rev-parse HEAD)"
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
